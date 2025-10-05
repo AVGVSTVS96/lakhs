@@ -45,7 +45,7 @@ const formatUsdDisplay = (value: number) =>
     maximumFractionDigits: 2,
   })
 
-const formatRateDisplayValue = (value: number) => value.toFixed(4)
+const formatRateDisplayValue = (value: number) => value.toFixed(2)
 
 const formatEntryFromBase = (baseValue: number, currency: EntryCurrency, rate: number) => {
   if (currency === "inr") {
@@ -75,17 +75,21 @@ const formatInternationalInputString = (value: string) => {
   return `${negative ? "-" : ""}${formattedInteger}${decimal}`
 }
 
-export function NumberConverter() {
+type NumberConverterProps = {
+  initialRate?: number
+}
+
+export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterProps) {
   const [entryCurrency, setEntryCurrency] = React.useState<EntryCurrency>("inr")
-  const [rate, setRate] = React.useState(DEFAULT_RATE)
-  const [rateDisplay, setRateDisplay] = React.useState(formatRateDisplayValue(DEFAULT_RATE))
+  const [rate, setRate] = React.useState(initialRate)
+  const [rateDisplay, setRateDisplay] = React.useState(formatRateDisplayValue(initialRate))
   const [isRateLoading, setIsRateLoading] = React.useState(false)
   const [rateFetchError, setRateFetchError] = React.useState<string | null>(null)
   const [lastRateFetchedAt, setLastRateFetchedAt] = React.useState<Date | null>(null)
 
   const [baseValue, setBaseValue] = React.useState(INITIAL_BASE_VALUE)
   const [fields, setFields] = React.useState<Record<FieldKey, string>>({
-    entry: formatEntryFromBase(INITIAL_BASE_VALUE, "inr", DEFAULT_RATE),
+    entry: formatEntryFromBase(INITIAL_BASE_VALUE, "inr", initialRate),
     lakhs: formatWithPrecision(toLakhs(INITIAL_BASE_VALUE)),
     crores: formatWithPrecision(toCrores(INITIAL_BASE_VALUE), 4),
   })
@@ -228,7 +232,7 @@ export function NumberConverter() {
   const formattedInternational = formatInternationalNumber(baseValue)
   const usdEquivalent = convertInrToUsd(baseValue, rate)
   const formattedUsd = formatUsdDisplay(usdEquivalent)
-  const rateSummary = formatWithPrecision(rate, 4)
+  const rateSummary = formatWithPrecision(rate, 2)
   const rateFetchedLabel = React.useMemo(() => {
     if (!lastRateFetchedAt) return null
     return new Intl.DateTimeFormat("en-US", {
@@ -292,12 +296,12 @@ export function NumberConverter() {
 
       <div className="grid gap-4 text-sm sm:grid-cols-2">
         <StatBlock
-          label="INR · Indian grouping"
-          value={`₹${formattedIndian}`}
+          label="USD amount"
+          value={`$${formattedUsd}`}
         />
         <StatBlock
-          label="INR · International grouping"
-          value={`₹${formattedInternational}`}
+          label="INR · Indian grouping"
+          value={`₹${formattedIndian}`}
         />
         <StatBlock
           label="Lakhs"
@@ -308,12 +312,12 @@ export function NumberConverter() {
           value={`${formatWithPrecision(toCrores(baseValue), 4)} Cr`}
         />
         <StatBlock
-          label="USD amount"
-          value={`$${formattedUsd}`}
-        />
-        <StatBlock
           label="Exchange snapshot"
           value={`1 USD → ₹${rateSummary}`}
+        />
+        <StatBlock
+          label="INR · International grouping"
+          value={`₹${formattedInternational}`}
         />
       </div>
 
@@ -342,7 +346,7 @@ export function NumberConverter() {
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground pr-2">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground px-2">
             1 USD
           </span>
           <span className="rounded-md border bg-background px-3 py-1.5 text-sm font-semibold shadow-xs">
