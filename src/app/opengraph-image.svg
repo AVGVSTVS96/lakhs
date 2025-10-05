@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Icon with L symbol -->
+  <g transform="translate(100, 165)">
+    <!-- Vertical line of L -->
+    <rect x="0" y="0" width="30" height="220" rx="8" fill="#ffffff"/>
+
+    <!-- Horizontal base of L -->
+    <rect x="0" y="220" width="140" height="30" rx="8" fill="#ffffff"/>
+
+    <!-- Top horizontal line (like rupee symbol) -->
+    <rect x="-5" y="10" width="130" height="12" rx="6" fill="#ffffff" opacity="0.9"/>
+
+    <!-- Second horizontal line (like rupee symbol) -->
+    <rect x="-5" y="40" width="130" height="12" rx="6" fill="#ffffff" opacity="0.9"/>
+  </g>
+
+  <!-- Title -->
+  <text x="320" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="#ffffff">
+    Lakhs &amp; Crores Converter
+  </text>
+
+  <!-- Subtitle -->
+  <text x="320" y="350" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="#a0a0a0">
+    USD to INR with live exchange rates
+  </text>
+
+  <!-- Feature text -->
+  <text x="320" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#808080">
+    1 lakh = 100,000  •  1 crore = 10 million
+  </text>
+</svg>
