@@ -321,7 +321,7 @@ export function NumberConverter() {
             Automatically refreshed every 5 minutes from live market data.
           </p>
           {rateFetchedLabel && !isRateLoading && !rateFetchError ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-lighter">
               Last updated at {rateFetchedLabel}
             </p>
           ) : null}
@@ -380,7 +380,7 @@ function Field({ id, label, description, value, onChange, onFocus, onBlur, inval
         placeholder="0"
       />
       {description ? (
-        <p id={descriptionId} className="text-xs text-muted-foreground">
+        <p id={descriptionId} className="text-xs text-muted-lighter">
           {description}
         </p>
       ) : null}
