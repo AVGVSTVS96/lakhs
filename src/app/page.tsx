@@ -9,7 +9,7 @@ export default function Home() {
       <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 pb-12 pt-4 sm:gap-8 sm:pb-16 sm:pt-6">
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Lakhs
+            lakhs
           </h1>
           <ThemeToggle />
         </header>

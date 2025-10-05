@@ -167,10 +167,20 @@ export function NumberConverter() {
   const handleCurrencyToggle = React.useCallback((value: string) => {
     if (value === entryCurrency) return
     const next = value === "usd" ? "usd" : "inr"
+
+    // Keep the displayed number the same, but adjust baseValue for the new currency
+    if (entryCurrency === "inr" && next === "usd") {
+      // Switching from INR to USD: same number now means USD, so baseValue *= rate
+      setBaseValue((current) => current * rate)
+    } else if (entryCurrency === "usd" && next === "inr") {
+      // Switching from USD to INR: same number now means INR, so baseValue /= rate
+      setBaseValue((current) => current / rate)
+    }
+
     setEntryCurrency(next)
     setInvalidField(null)
     setActiveField(null)
-  }, [entryCurrency])
+  }, [entryCurrency, rate])
 
   const fetchLiveRate = React.useCallback(async () => {
     try {
