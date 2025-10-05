@@ -263,7 +263,7 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
   }, [lastRateFetchedAt])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Currency and number format converter">
       <div className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
@@ -271,7 +271,7 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
               Amount
             </Label>
           </div>
-          <Tabs value={entryCurrency} onValueChange={handleCurrencyToggle} className="sm:self-end">
+          <Tabs value={entryCurrency} onValueChange={handleCurrencyToggle} className="sm:self-end" aria-label="Select currency">
             <TabsList>
               <TabsTrigger value="inr">INR</TabsTrigger>
               <TabsTrigger value="usd">USD</TabsTrigger>
@@ -314,7 +314,7 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
 
       <Separator className="bg-border" />
 
-      <div className="grid gap-4 text-sm sm:grid-cols-2">
+      <div className="grid gap-4 text-sm sm:grid-cols-2" role="region" aria-label="Conversion results">
         <StatBlock
           label="USD amount"
           value={`$${formattedUsd}`}
@@ -341,14 +341,14 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
         />
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between" aria-live="polite" aria-atomic="true">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Label className="text-xs uppercase tracking-wide">
               Exchange rate
             </Label>
             {!isRateLoading && !rateFetchError ? (
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-label="Live rate active" />
             ) : null}
           </div>
           {rateFetchedLabel && !isRateLoading && !rateFetchError ? (
