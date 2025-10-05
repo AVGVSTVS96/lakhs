@@ -5,20 +5,37 @@ import { ThemeToggle } from "@/components/theme-toggle"
 const DEFAULT_RATE = 83
 
 async function getExchangeRate() {
+  // Try open.er-api.com first (6 decimal precision)
   try {
-    const res = await fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR', {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD', {
       next: { revalidate: 300 } // Revalidate every 5 minutes
     })
 
-    if (!res.ok) {
-      return DEFAULT_RATE
+    if (res.ok) {
+      const data = await res.json() as { rates?: { INR?: number } }
+      const rate = data.rates?.INR
+      if (rate) return rate
     }
-
-    const data = await res.json() as { rates?: { INR?: number } }
-    return data.rates?.INR ?? DEFAULT_RATE
   } catch {
-    return DEFAULT_RATE
+    // Fall through to fallback
   }
+
+  // Fallback to frankfurter.dev (2 decimal precision)
+  try {
+    const res = await fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR', {
+      next: { revalidate: 300 }
+    })
+
+    if (res.ok) {
+      const data = await res.json() as { rates?: { INR?: number } }
+      const rate = data.rates?.INR
+      if (rate) return rate
+    }
+  } catch {
+    // Fall through to default
+  }
+
+  return DEFAULT_RATE
 }
 
 export default async function Home() {

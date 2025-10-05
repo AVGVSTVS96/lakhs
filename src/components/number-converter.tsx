@@ -25,7 +25,8 @@ type FieldKey = "entry" | "lakhs" | "crores"
 
 const INITIAL_BASE_VALUE = 1_000_000
 const DEFAULT_RATE = 83
-const RATE_API_URL = "https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR"
+const PRIMARY_RATE_API_URL = "https://open.er-api.com/v6/latest/USD"
+const FALLBACK_RATE_API_URL = "https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR"
 const RATE_REFRESH_INTERVAL = 5 * 60 * 1000
 
 const entryPrefixes: Record<EntryCurrency, string> = {
@@ -45,7 +46,7 @@ const formatUsdDisplay = (value: number) =>
     maximumFractionDigits: 2,
   })
 
-const formatRateDisplayValue = (value: number) => value.toFixed(2)
+const formatRateDisplayValue = (value: number) => value.toFixed(4)
 
 const formatEntryFromBase = (baseValue: number, currency: EntryCurrency, rate: number) => {
   if (currency === "inr") {
@@ -187,34 +188,53 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
   }, [entryCurrency, rate])
 
   const fetchLiveRate = React.useCallback(async () => {
+    setIsRateLoading(true)
+    setRateFetchError(null)
+
+    // Try primary API (open.er-api.com)
     try {
-      setIsRateLoading(true)
-      setRateFetchError(null)
-      const response = await fetch(RATE_API_URL, {
-        headers: {
-          "Accept": "application/json",
-        },
+      const response = await fetch(PRIMARY_RATE_API_URL, {
+        headers: { "Accept": "application/json" },
         cache: "no-store",
       })
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`)
+      if (response.ok) {
+        const data = await response.json() as { rates?: { INR?: number } }
+        const nextRate = data?.rates?.INR
+        if (typeof nextRate === "number" && !Number.isNaN(nextRate)) {
+          setRate(nextRate)
+          setRateDisplay(formatRateDisplayValue(nextRate))
+          setLastRateFetchedAt(new Date())
+          setIsRateLoading(false)
+          return
+        }
       }
-      const data = (await response.json()) as {
-        rates?: { INR?: number }
-        date?: string
-      }
-      const nextRate = data?.rates?.INR
-      if (typeof nextRate !== "number" || Number.isNaN(nextRate)) {
-        throw new Error("Missing INR rate in response")
-      }
-      setRate(nextRate)
-      setRateDisplay(formatRateDisplayValue(nextRate))
-      setLastRateFetchedAt(new Date())
     } catch {
-      setRateFetchError("Live rate unavailable. Try again shortly.")
-    } finally {
-      setIsRateLoading(false)
+      // Fall through to fallback
     }
+
+    // Fallback to frankfurter.dev
+    try {
+      const response = await fetch(FALLBACK_RATE_API_URL, {
+        headers: { "Accept": "application/json" },
+        cache: "no-store",
+      })
+      if (response.ok) {
+        const data = await response.json() as { rates?: { INR?: number } }
+        const nextRate = data?.rates?.INR
+        if (typeof nextRate === "number" && !Number.isNaN(nextRate)) {
+          setRate(nextRate)
+          setRateDisplay(formatRateDisplayValue(nextRate))
+          setLastRateFetchedAt(new Date())
+          setIsRateLoading(false)
+          return
+        }
+      }
+    } catch {
+      // Fall through to error
+    }
+
+    setRateFetchError("Live rate unavailable. Try again shortly.")
+    setIsRateLoading(false)
   }, [])
 
   React.useEffect(() => {
@@ -232,7 +252,7 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
   const formattedInternational = formatInternationalNumber(baseValue)
   const usdEquivalent = convertInrToUsd(baseValue, rate)
   const formattedUsd = formatUsdDisplay(usdEquivalent)
-  const rateSummary = formatWithPrecision(rate, 2)
+  const rateSummary = formatWithPrecision(rate, 4)
   const rateFetchedLabel = React.useMemo(() => {
     if (!lastRateFetchedAt) return null
     return new Intl.DateTimeFormat("en-US", {
