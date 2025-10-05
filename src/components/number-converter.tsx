@@ -219,7 +219,6 @@ export function NumberConverter() {
   const usdEquivalent = convertInrToUsd(baseValue, rate)
   const formattedUsd = formatUsdDisplay(usdEquivalent)
   const rateSummary = formatWithPrecision(rate, 4)
-  const entryDescriptionId = "entry-description"
   const rateFetchedLabel = React.useMemo(() => {
     if (!lastRateFetchedAt) return null
     return new Intl.DateTimeFormat("en-US", {
@@ -235,11 +234,8 @@ export function NumberConverter() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
             <Label htmlFor="entry" className="text-sm font-medium">
-              Entry amount
+              Amount
             </Label>
-            <p id={entryDescriptionId} className="text-xs text-muted-foreground sm:text-sm">
-              Type in USD or INR and every representation updates instantly.
-            </p>
           </div>
           <Tabs value={entryCurrency} onValueChange={handleCurrencyToggle} className="sm:self-end">
             <TabsList>
@@ -256,7 +252,6 @@ export function NumberConverter() {
           onFocus={handleFocus("entry")}
           onBlur={handleBlur("entry")}
           invalid={invalidField === "entry"}
-          describedBy={entryDescriptionId}
         />
       </div>
 
@@ -264,7 +259,7 @@ export function NumberConverter() {
         <Field
           id="lakhs"
           label="Lakhs"
-          description="Value expressed in lakhs"
+          description="1 lakh = 100,000"
           value={fields.lakhs}
           onChange={handleUnitChange("lakhs")}
           onFocus={handleFocus("lakhs")}
@@ -274,7 +269,7 @@ export function NumberConverter() {
         <Field
           id="crores"
           label="Crores"
-          description="Value expressed in crores"
+          description="1 crore = 10,000,000"
           value={fields.crores}
           onChange={handleUnitChange("crores")}
           onFocus={handleFocus("crores")}
@@ -314,12 +309,14 @@ export function NumberConverter() {
 
       <div className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <Label className="text-xs uppercase tracking-wide">
-            Live exchange rate
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Automatically refreshed every 5 minutes from live market data.
-          </p>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs uppercase tracking-wide">
+              Exchange rate
+            </Label>
+            {!isRateLoading && !rateFetchError ? (
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+            ) : null}
+          </div>
           {rateFetchedLabel && !isRateLoading && !rateFetchError ? (
             <p className="text-xs text-muted-lighter">
               Last updated at {rateFetchedLabel}

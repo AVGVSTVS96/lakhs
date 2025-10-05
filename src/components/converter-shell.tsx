@@ -22,7 +22,7 @@ export function ConverterShell({
   children,
 }: ConverterShellProps) {
   return (
-    <Card className="backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <Card className="gap-4 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <CardHeader className="gap-3">
         <div className="space-y-2">
           <CardTitle className="text-lg font-semibold sm:text-xl">
