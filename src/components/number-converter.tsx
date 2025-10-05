@@ -12,19 +12,23 @@ import {
   fromCrores,
   fromLakhs,
   parseNumber,
+  sanitizeNumericInput,
   toCrores,
   toLakhs,
 } from "@/lib/conversions"
 
 type FieldKey = "number" | "lakhs" | "crores"
 
-const formatNumberInput = (value: number, fractionDigits = 0) =>
-  Number(value.toFixed(fractionDigits)).toString()
+const formatNumberDisplay = (value: number) =>
+  value.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  })
 
 const formatters: Record<FieldKey, (value: number) => string> = {
-  number: (value) => formatNumberInput(value, 0),
-  lakhs: (value) => formatNumberInput(toLakhs(value), 2),
-  crores: (value) => formatNumberInput(toCrores(value), 4),
+  number: (value) => formatNumberDisplay(value),
+  lakhs: (value) => formatWithPrecision(toLakhs(value)),
+  crores: (value) => formatWithPrecision(toCrores(value), 4),
 }
 
 const converters: Record<FieldKey, (value: number) => number> = {
@@ -40,25 +44,87 @@ export function NumberConverter() {
     lakhs: formatters.lakhs(1_000_000),
     crores: formatters.crores(1_000_000),
   })
+  const [activeField, setActiveField] = React.useState<FieldKey | null>(null)
   const [invalidField, setInvalidField] = React.useState<FieldKey | null>(null)
 
-  const updateFieldsFromBase = React.useCallback((value: number) => {
-    setFields((prev) => ({
-      number: invalidField === "number" ? prev.number : formatters.number(value),
-      lakhs: invalidField === "lakhs" ? prev.lakhs : formatters.lakhs(value),
-      crores: invalidField === "crores" ? prev.crores : formatters.crores(value),
-    }))
-  }, [invalidField])
+  const updateFieldsFromBase = React.useCallback(
+    (value: number) => {
+      setFields((prev) => ({
+        number: activeField === "number" ? prev.number : formatters.number(value),
+        lakhs: activeField === "lakhs" ? prev.lakhs : formatters.lakhs(value),
+        crores: activeField === "crores" ? prev.crores : formatters.crores(value),
+      }))
+    },
+    [activeField]
+  )
+
+  const handleFocus = React.useCallback((field: FieldKey) => {
+    setActiveField(field)
+  }, [])
+
+  const handleBlur = React.useCallback((field: FieldKey) => {
+    setActiveField((current) => (current === field ? null : current))
+  }, [])
+
+  const isTransientNumericInput = React.useCallback((value: string) => {
+    return (
+      value === "" ||
+      value === "-" ||
+      value === "." ||
+      value === "-." ||
+      value.endsWith(".")
+    )
+  }, [])
+
+  const formatInternationalInputString = React.useCallback((value: string) => {
+    if (!value) return ""
+
+    if (value === "-") return "-"
+
+    const negative = value.startsWith("-")
+    const unsigned = negative ? value.slice(1) : value
+    const [integerPartRaw, ...decimalParts] = unsigned.split(".")
+    const integerPart = integerPartRaw.replace(/^0+(?=\d)/, "") || "0"
+    const decimalPart = decimalParts.length > 0 ? decimalParts.join("") : undefined
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    const decimal = decimalPart !== undefined ? `.${decimalPart}` : ""
+    return `${negative ? "-" : ""}${formattedInteger}${decimal}`
+  }, [])
 
   const handleChange = React.useCallback(
     (field: FieldKey) =>
       (event: React.ChangeEvent<HTMLInputElement>) => {
         const raw = event.target.value
-        setFields((prev) => ({ ...prev, [field]: raw }))
+        setActiveField(field)
 
+        if (field === "number") {
+          const sanitized = sanitizeNumericInput(raw)
+          setFields((prev) => ({
+            ...prev,
+            number: formatInternationalInputString(sanitized),
+          }))
+          const parsed = parseNumber(raw)
+          if (parsed == null) {
+            setInvalidField(isTransientNumericInput(sanitizeNumericInput(raw)) ? null : field)
+            return
+          }
+
+          const nextBase = converters[field](parsed)
+          setInvalidField(null)
+          setBaseValue(nextBase)
+
+          setFields({
+            number: formatters.number(nextBase),
+            lakhs: formatters.lakhs(nextBase),
+            crores: formatters.crores(nextBase),
+          })
+          return
+        }
+
+        setFields((prev) => ({ ...prev, [field]: raw }))
         const parsed = parseNumber(raw)
         if (parsed == null) {
-          setInvalidField(field)
+          setInvalidField(isTransientNumericInput(sanitizeNumericInput(raw)) ? null : field)
           return
         }
 
@@ -67,12 +133,12 @@ export function NumberConverter() {
         setBaseValue(nextBase)
 
         setFields({
-          number: field === "number" ? raw : formatters.number(nextBase),
+          number: formatters.number(nextBase),
           lakhs: field === "lakhs" ? raw : formatters.lakhs(nextBase),
           crores: field === "crores" ? raw : formatters.crores(nextBase),
         })
       },
-    []
+    [formatInternationalInputString, isTransientNumericInput]
   )
 
   React.useEffect(() => {
@@ -91,6 +157,8 @@ export function NumberConverter() {
           description="International format input"
           value={fields.number}
           onChange={handleChange("number")}
+          onFocus={handleFocus("number")}
+          onBlur={handleBlur("number")}
           invalid={invalidField === "number"}
         />
         <Field
@@ -99,6 +167,8 @@ export function NumberConverter() {
           description="Value expressed in lakhs"
           value={fields.lakhs}
           onChange={handleChange("lakhs")}
+          onFocus={handleFocus("lakhs")}
+          onBlur={handleBlur("lakhs")}
           invalid={invalidField === "lakhs"}
         />
         <Field
@@ -107,6 +177,8 @@ export function NumberConverter() {
           description="Value expressed in crores"
           value={fields.crores}
           onChange={handleChange("crores")}
+          onFocus={handleFocus("crores")}
+          onBlur={handleBlur("crores")}
           invalid={invalidField === "crores"}
         />
       </div>
@@ -135,10 +207,12 @@ type FieldProps = {
   description?: string
   value: string
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onFocus: () => void
+  onBlur: () => void
   invalid?: boolean
 }
 
-function Field({ id, label, description, value, onChange, invalid }: FieldProps) {
+function Field({ id, label, description, value, onChange, onFocus, onBlur, invalid }: FieldProps) {
   const describedBy = description ? `${id}-description` : undefined
 
   return (
@@ -154,6 +228,8 @@ function Field({ id, label, description, value, onChange, invalid }: FieldProps)
         aria-invalid={invalid}
         aria-describedby={describedBy}
         onChange={onChange}
+        onFocus={onFocus}
+        onBlur={onBlur}
         inputMode="decimal"
         placeholder="0"
       />

@@ -1,14 +1,6 @@
 const LAKH = 100_000;
 const CRORE = 10_000_000;
 
-const intlFormatter = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 2,
-});
-
-const indianFormatter = new Intl.NumberFormat("en-IN", {
-  maximumFractionDigits: 2,
-});
-
 export function sanitizeNumericInput(value: string) {
   return value.replace(/[^0-9.\-]/g, "");
 }
@@ -16,7 +8,10 @@ export function sanitizeNumericInput(value: string) {
 export function parseNumber(input: string): number | null {
   if (!input.trim()) return null;
   const cleaned = sanitizeNumericInput(input);
-  if (!cleaned || cleaned === "-" || cleaned === ".") return null;
+  if (!cleaned || cleaned === "-" || cleaned === "." || cleaned === "-.") {
+    return null;
+  }
+  if (cleaned.endsWith(".")) return null;
   const parsed = Number.parseFloat(cleaned);
   if (!Number.isFinite(parsed)) return null;
   return parsed;
@@ -24,12 +19,18 @@ export function parseNumber(input: string): number | null {
 
 export function formatInternationalNumber(value: number) {
   if (!Number.isFinite(value)) return "";
-  return intlFormatter.format(value);
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
 }
 
 export function formatIndianNumber(value: number) {
   if (!Number.isFinite(value)) return "";
-  return indianFormatter.format(value);
+  return value.toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
 }
 
 export function toLakhs(value: number) {

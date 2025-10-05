@@ -22,6 +22,7 @@ describe("number parsing", () => {
   it("returns null for invalid input", () => {
     expect(parseNumber("")).toBeNull()
     expect(parseNumber("-")).toBeNull()
+    expect(parseNumber("1234.")).toBeNull()
   })
 })
 

@@ -1,6 +1,7 @@
 import { CurrencyConverter } from "@/components/currency-converter"
 import { ConverterShell } from "@/components/converter-shell"
 import { NumberConverter } from "@/components/number-converter"
+import { Separator } from "@/components/ui/separator"
 
 export default function Home() {
   return (
@@ -19,19 +20,24 @@ export default function Home() {
           </p>
         </header>
 
-        <section className="grid gap-6 sm:gap-8">
+        <section>
           <ConverterShell
             title="Numbers & units"
-            description="Move seamlessly between standard numbers, lakhs, and crores while seeing both Indian and international grouping."
+            description="Move seamlessly between international numbers, lakhs, crores, and see the live USD ↔ INR view in one place."
           >
             <NumberConverter />
-          </ConverterShell>
-
-          <ConverterShell
-            title="Currency"
-            description="Compare USD and INR with a live-adjustable exchange rate and clear formatting."
-          >
-            <CurrencyConverter />
+            <Separator className="bg-border" />
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  Currency view
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Adjust the exchange rate to understand how your value maps across USD and INR.
+                </p>
+              </div>
+              <CurrencyConverter />
+            </div>
           </ConverterShell>
         </section>
       </main>
