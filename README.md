@@ -14,5 +14,3 @@ xpm run dev
 ```
 
 [what's xpm?](https://github.com/assistant-ui/xpm)
-
-Built with Next.js and Tailwind CSS.
