@@ -2,7 +2,6 @@
 
 import * as React from "react"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -26,6 +25,8 @@ type FieldKey = "entry" | "lakhs" | "crores"
 
 const INITIAL_BASE_VALUE = 1_000_000
 const DEFAULT_RATE = 83
+const RATE_API_URL = "https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR"
+const RATE_REFRESH_INTERVAL = 5 * 60 * 1000
 
 const entryPrefixes: Record<EntryCurrency, string> = {
   inr: "₹",
@@ -43,6 +44,8 @@ const formatUsdDisplay = (value: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
+
+const formatRateDisplayValue = (value: number) => value.toFixed(4)
 
 const formatEntryFromBase = (baseValue: number, currency: EntryCurrency, rate: number) => {
   if (currency === "inr") {
@@ -75,8 +78,10 @@ const formatInternationalInputString = (value: string) => {
 export function NumberConverter() {
   const [entryCurrency, setEntryCurrency] = React.useState<EntryCurrency>("inr")
   const [rate, setRate] = React.useState(DEFAULT_RATE)
-  const [rateInput, setRateInput] = React.useState(String(DEFAULT_RATE))
-  const [rateError, setRateError] = React.useState<string | null>(null)
+  const [rateDisplay, setRateDisplay] = React.useState(formatRateDisplayValue(DEFAULT_RATE))
+  const [isRateLoading, setIsRateLoading] = React.useState(false)
+  const [rateFetchError, setRateFetchError] = React.useState<string | null>(null)
+  const [lastRateFetchedAt, setLastRateFetchedAt] = React.useState<Date | null>(null)
 
   const [baseValue, setBaseValue] = React.useState(INITIAL_BASE_VALUE)
   const [fields, setFields] = React.useState<Record<FieldKey, string>>({
@@ -167,34 +172,47 @@ export function NumberConverter() {
     setActiveField(null)
   }, [entryCurrency])
 
-  const handleRateChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = event.target.value
-      const sanitized = sanitizeNumericInput(raw)
-      setRateInput(sanitized)
-
-      const parsed = parseNumber(sanitized)
-      if (parsed == null) {
-        setRateError(isTransientNumericInput(sanitized) ? null : "Enter a valid rate")
-        return
+  const fetchLiveRate = React.useCallback(async () => {
+    try {
+      setIsRateLoading(true)
+      setRateFetchError(null)
+      const response = await fetch(RATE_API_URL, {
+        headers: {
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+      })
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`)
       }
-
-      if (parsed <= 0) {
-        setRateError("Enter a rate greater than zero")
-        return
+      const data = (await response.json()) as {
+        rates?: { INR?: number }
+        date?: string
       }
-
-      setRateError(null)
-      setRate(parsed)
-    },
-    []
-  )
-
-  const handleRateReset = React.useCallback(() => {
-    setRate(DEFAULT_RATE)
-    setRateInput(String(DEFAULT_RATE))
-    setRateError(null)
+      const nextRate = data?.rates?.INR
+      if (typeof nextRate !== "number" || Number.isNaN(nextRate)) {
+        throw new Error("Missing INR rate in response")
+      }
+      setRate(nextRate)
+      setRateDisplay(formatRateDisplayValue(nextRate))
+      setLastRateFetchedAt(new Date())
+    } catch {
+      setRateFetchError("Live rate unavailable. Try again shortly.")
+    } finally {
+      setIsRateLoading(false)
+    }
   }, [])
+
+  React.useEffect(() => {
+    fetchLiveRate()
+  }, [fetchLiveRate])
+
+  React.useEffect(() => {
+    const timer = window.setInterval(() => {
+      fetchLiveRate()
+    }, RATE_REFRESH_INTERVAL)
+    return () => window.clearInterval(timer)
+  }, [fetchLiveRate])
 
   const formattedIndian = formatIndianNumber(baseValue)
   const formattedInternational = formatInternationalNumber(baseValue)
@@ -202,6 +220,14 @@ export function NumberConverter() {
   const formattedUsd = formatUsdDisplay(usdEquivalent)
   const rateSummary = formatWithPrecision(rate, 4)
   const entryDescriptionId = "entry-description"
+  const rateFetchedLabel = React.useMemo(() => {
+    if (!lastRateFetchedAt) return null
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(lastRateFetchedAt)
+  }, [lastRateFetchedAt])
 
   return (
     <div className="space-y-6">
@@ -279,41 +305,43 @@ export function NumberConverter() {
         <StatBlock
           label="USD amount"
           value={`$${formattedUsd}`}
-          hint="Recomputed with the rate below."
         />
         <StatBlock
           label="Exchange snapshot"
           value={`1 USD → ₹${rateSummary}`}
-          hint="Tweak the rate to match today’s market."
         />
       </div>
 
       <div className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <Label htmlFor="rate" className="text-xs uppercase tracking-wide">
-            Exchange rate
+          <Label className="text-xs uppercase tracking-wide">
+            Live exchange rate
           </Label>
           <p className="text-sm text-muted-foreground">
-            This calculator assumes 1 USD converts to ₹{rateSummary}. Adjust it to reflect your context.
+            Automatically refreshed every 5 minutes from live market data.
           </p>
+          {rateFetchedLabel && !isRateLoading && !rateFetchError ? (
+            <p className="text-xs text-muted-foreground">
+              Last updated at {rateFetchedLabel}
+            </p>
+          ) : null}
+          {isRateLoading ? (
+            <p className="text-xs text-muted-foreground">Fetching latest rate…</p>
+          ) : null}
+          {rateFetchError ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              {rateFetchError}
+            </p>
+          ) : null}
         </div>
-        <div className="flex items-center gap-3">
-          <Input
-            id="rate"
-            inputMode="decimal"
-            value={rateInput}
-            onChange={handleRateChange}
-            aria-invalid={Boolean(rateError)}
-            className="w-28"
-            placeholder="0"
-          />
-          <Button type="button" variant="outline" onClick={handleRateReset}>
-            Reset
-          </Button>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground pr-2">
+            1 USD
+          </span>
+          <span className="rounded-md border bg-background px-3 py-1.5 text-sm font-semibold shadow-xs">
+            ₹{rateDisplay}
+          </span>
         </div>
-        {rateError ? (
-          <p className="text-xs text-destructive sm:max-w-[14rem]">{rateError}</p>
-        ) : null}
       </div>
     </div>
   )
