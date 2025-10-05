@@ -58,13 +58,19 @@ export function NumberConverter() {
     [activeField]
   )
 
-  const handleFocus = React.useCallback((field: FieldKey) => {
-    setActiveField(field)
-  }, [])
+  const handleFocus = React.useCallback(
+    (field: FieldKey) => () => {
+      setActiveField(field)
+    },
+    []
+  )
 
-  const handleBlur = React.useCallback((field: FieldKey) => {
-    setActiveField((current) => (current === field ? null : current))
-  }, [])
+  const handleBlur = React.useCallback(
+    (field: FieldKey) => () => {
+      setActiveField((current) => (current === field ? null : current))
+    },
+    []
+  )
 
   const isTransientNumericInput = React.useCallback((value: string) => {
     return (
