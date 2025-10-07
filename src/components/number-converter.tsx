@@ -2,10 +2,12 @@
 
 import * as React from "react"
 
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Field } from "@/components/number-converter/Field"
+import { EntryField } from "@/components/number-converter/EntryField"
+import { StatBlock } from "@/components/number-converter/StatBlock"
+import { DEFAULT_RATE, fetchUsdInr } from "@/lib/rates"
 import {
   convertInrToUsd,
   convertUsdToInr,
@@ -24,9 +26,6 @@ type EntryCurrency = "inr" | "usd"
 type FieldKey = "entry" | "lakhs" | "crores"
 
 const INITIAL_BASE_VALUE = 1_000_000
-const DEFAULT_RATE = 83
-const PRIMARY_RATE_API_URL = "https://open.er-api.com/v6/latest/USD"
-const FALLBACK_RATE_API_URL = "https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR"
 const RATE_REFRESH_INTERVAL = 5 * 60 * 1000
 
 const entryPrefixes: Record<EntryCurrency, string> = {
@@ -56,8 +55,7 @@ const formatEntryFromBase = (baseValue: number, currency: EntryCurrency, rate: n
   return formatUsdDisplay(usd)
 }
 
-const combineIds = (...ids: Array<string | undefined>) =>
-  ids.filter(Boolean).join(" ") || undefined
+//
 
 const isTransientNumericInput = (value: string) =>
   value === "" || value === "-" || value === "." || value === "-." || value.endsWith(".")
@@ -190,49 +188,16 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
   const fetchLiveRate = React.useCallback(async () => {
     setIsRateLoading(true)
     setRateFetchError(null)
-
-    // Try primary API (open.er-api.com)
     try {
-      const response = await fetch(PRIMARY_RATE_API_URL, {
-        headers: { "Accept": "application/json" },
-        cache: "no-store",
-      })
-      if (response.ok) {
-        const data = await response.json() as { rates?: { INR?: number } }
-        const nextRate = data?.rates?.INR
-        if (typeof nextRate === "number" && !Number.isNaN(nextRate)) {
-          setRate(nextRate)
-          setRateDisplay(formatRateDisplayValue(nextRate))
-          setLastRateFetchedAt(new Date())
-          setIsRateLoading(false)
-          return
-        }
+      const nextRate = await fetchUsdInr({ headers: { Accept: "application/json" }, cache: "no-store" })
+      if (typeof nextRate === "number") {
+        setRate(nextRate)
+        setRateDisplay(formatRateDisplayValue(nextRate))
+        setLastRateFetchedAt(new Date())
+        setIsRateLoading(false)
+        return
       }
-    } catch {
-      // Fall through to fallback
-    }
-
-    // Fallback to frankfurter.dev
-    try {
-      const response = await fetch(FALLBACK_RATE_API_URL, {
-        headers: { "Accept": "application/json" },
-        cache: "no-store",
-      })
-      if (response.ok) {
-        const data = await response.json() as { rates?: { INR?: number } }
-        const nextRate = data?.rates?.INR
-        if (typeof nextRate === "number" && !Number.isNaN(nextRate)) {
-          setRate(nextRate)
-          setRateDisplay(formatRateDisplayValue(nextRate))
-          setLastRateFetchedAt(new Date())
-          setIsRateLoading(false)
-          return
-        }
-      }
-    } catch {
-      // Fall through to error
-    }
-
+    } catch {}
     setRateFetchError("Live rate unavailable. Try again shortly.")
     setIsRateLoading(false)
   }, [])
@@ -267,7 +232,7 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
       <div className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <Label htmlFor="entry" className="text-sm font-medium">
+            <Label htmlFor="entry" className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
               Amount
             </Label>
           </div>
@@ -289,7 +254,7 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2">
         <Field
           id="lakhs"
           label="Lakhs"
@@ -312,9 +277,9 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
         />
       </div>
 
-      <Separator className="bg-border" />
+      {/* Minimal: no heavy separators/cards */}
 
-      <div className="grid gap-4 text-sm sm:grid-cols-2" role="region" aria-label="Conversion results">
+      <div className="grid gap-6 text-sm sm:grid-cols-2" role="region" aria-label="Conversion results">
         <StatBlock
           label="USD amount"
           value={`$${formattedUsd}`}
@@ -341,146 +306,24 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
         />
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between" aria-live="polite" aria-atomic="true">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" aria-live="polite" aria-atomic="true">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Label className="text-xs uppercase tracking-wide">
-              Exchange rate
-            </Label>
-            {!isRateLoading && !rateFetchError ? (
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-label="Live rate active" />
-            ) : null}
-          </div>
+          <Label className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Exchange rate</Label>
           {rateFetchedLabel && !isRateLoading && !rateFetchError ? (
-            <p className="text-xs text-muted-lighter">
-              Last updated at {rateFetchedLabel}
-            </p>
+            <p className="text-xs text-muted-lighter">Last updated at {rateFetchedLabel}</p>
           ) : null}
           {isRateLoading ? (
             <p className="text-xs text-muted-foreground">Fetching latest rate…</p>
           ) : null}
           {rateFetchError ? (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              {rateFetchError}
-            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">{rateFetchError}</p>
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground px-2">
-            1 USD
-          </span>
-          <span className="rounded-md border bg-background px-3 py-1.5 text-sm font-semibold shadow-xs">
-            ₹{rateDisplay}
-          </span>
+          <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">1 USD</span>
+          <span className="text-2xl font-semibold">₹{rateDisplay}</span>
         </div>
       </div>
-    </div>
-  )
-}
-
-type FieldProps = {
-  id: string
-  label: string
-  description?: string
-  value: string
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
-  onFocus: () => void
-  onBlur: () => void
-  invalid?: boolean
-}
-
-function Field({ id, label, description, value, onChange, onFocus, onBlur, invalid }: FieldProps) {
-  const descriptionId = description ? `${id}-description` : undefined
-  const errorId = invalid ? `${id}-error` : undefined
-  const describedBy = combineIds(descriptionId, errorId)
-
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-sm font-medium">
-        {label}
-      </Label>
-      <Input
-        id={id}
-        value={value}
-        aria-invalid={invalid}
-        aria-describedby={describedBy}
-        onChange={onChange}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        inputMode="decimal"
-        placeholder="0"
-      />
-      {description ? (
-        <p id={descriptionId} className="text-xs text-muted-lighter">
-          {description}
-        </p>
-      ) : null}
-      {invalid ? (
-        <p id={errorId} className="text-xs text-destructive">
-          Enter a valid number
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-type EntryFieldProps = {
-  id: string
-  prefix: string
-  value: string
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
-  onFocus: () => void
-  onBlur: () => void
-  invalid?: boolean
-  describedBy?: string
-}
-
-function EntryField({ id, prefix, value, onChange, onFocus, onBlur, invalid, describedBy }: EntryFieldProps) {
-  const errorId = invalid ? `${id}-error` : undefined
-  const described = combineIds(describedBy, errorId)
-
-  return (
-    <div className="space-y-2">
-      <div className="relative">
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
-          {prefix}
-        </span>
-        <Input
-          id={id}
-          value={value}
-          onChange={onChange}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          aria-invalid={invalid}
-          aria-describedby={described}
-          inputMode="decimal"
-          placeholder="0"
-          className="pl-8 text-base sm:text-lg"
-        />
-      </div>
-      {invalid ? (
-        <p id={errorId} className="text-xs text-destructive">
-          Enter a valid amount
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-type StatBlockProps = {
-  label: string
-  value: string
-  hint?: string
-}
-
-function StatBlock({ label, value, hint }: StatBlockProps) {
-  return (
-    <div className="rounded-lg border bg-muted/40 px-4 py-3 shadow-xs">
-      <p className="text-muted-foreground text-xs uppercase tracking-wide">
-        {label}
-      </p>
-      <p className="mt-1 text-base font-semibold sm:text-lg">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   )
 }
