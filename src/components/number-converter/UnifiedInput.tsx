@@ -52,7 +52,7 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
             inputMode="decimal"
             className={cn(
               // added tabular-nums and caret-primary
-              "h-auto border-0 bg-transparent p-0 text-5xl sm:text-6xl font-semibold tracking-tight shadow-none transition-all placeholder:text-muted-foreground/20 focus-visible:ring-0 tabular-nums caret-primary",
+              "h-auto border-0 bg-transparent p-0 md:p-0 text-5xl sm:text-6xl md:text-6xl font-semibold tracking-tight shadow-none transition-all placeholder:text-muted-foreground/20 focus-visible:ring-0 tabular-nums caret-primary",
               "w-full",
               isActive ? "text-primary" : "text-foreground"
             )}
