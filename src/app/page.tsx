@@ -1,6 +1,8 @@
 import { NumberConverter } from "@/components/number-converter"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DEFAULT_RATE, fetchUsdInr } from "@/lib/rates"
+import { ChevronDown } from "lucide-react"
 
 async function getExchangeRate() {
   const rate = await fetchUsdInr({ next: { revalidate: 300 } })
@@ -12,51 +14,6 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
-
-      {/* SEO Content - Visually hidden but accessible to bots and screen readers */}
-      <div className="sr-only">
-        <h2>Understanding Lakhs and Crores</h2>
-        <p>
-          The Indian numbering system uses lakhs and crores for large numbers. One lakh equals 100,000 (one hundred thousand),
-          and one crore equals 10,000,000 (ten million). This free online converter helps you convert between Indian and
-          international number formats with live USD to INR exchange rates.
-        </p>
-
-        <h3>What is a Lakh?</h3>
-        <p>
-          A lakh is a unit in the Indian numbering system equal to 100,000 (one hundred thousand). It is commonly used in
-          India, Pakistan, Bangladesh, and other South Asian countries. For example, 5 lakhs equals 500,000 in international notation.
-        </p>
-
-        <h3>What is a Crore?</h3>
-        <p>
-          A crore is equal to 10,000,000 (ten million) or 100 lakhs. It is widely used in financial contexts across South Asia.
-          For example, 2 crores equals 20,000,000 or approximately $238,000 USD at current exchange rates.
-        </p>
-
-        <h3>How to Convert Lakhs to USD</h3>
-        <ol>
-          <li>Enter the amount in lakhs in the input field</li>
-          <li>The converter automatically calculates the value in international notation (multiply by 100,000)</li>
-          <li>View the USD equivalent using live exchange rates updated every 5 minutes</li>
-          <li>Compare Indian grouping (lakhs/crores) with international grouping (thousands/millions)</li>
-        </ol>
-
-        <h3>Common Conversions</h3>
-        <ul>
-          <li>1 lakh = 100,000 = $1,125 USD (approx)</li>
-          <li>10 lakhs = 1,000,000 = $11,250 USD (approx)</li>
-          <li>1 crore = 10,000,000 = $112,500 USD (approx)</li>
-          <li>10 crores = 100,000,000 = $1,125,000 USD (approx)</li>
-        </ul>
-
-        <h3>USD to INR Exchange Rate</h3>
-        <p>
-          Current exchange rate: 1 USD = {initialRate.toFixed(4)} INR. Our converter uses live exchange rates from reliable
-          sources, updated every 5 minutes via ISR (Incremental Static Regeneration) for accuracy.
-        </p>
-      </div>
-
       <main className="mx-auto flex max-w-3xl flex-col px-6 py-8 sm:py-16" role="main">
         <header className="flex items-center justify-between mb-12">
           {/* Visually hidden H1 for SEO and screen readers */}
@@ -74,6 +31,73 @@ export default async function Home() {
 
         <section aria-label="Currency converter tool">
           <NumberConverter initialRate={initialRate} />
+        </section>
+
+        <section className="mt-4" aria-label="About and FAQ">
+          <Collapsible className="group w-full max-w-2xl mx-auto">
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-full border border-border/50 bg-muted/50 px-6 py-3 text-xs font-medium text-muted-foreground transition-all hover:bg-muted/70 hover:text-foreground hover:border-border/80">
+              <span>About & Conversions</span>
+              <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180 opacity-50" />
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="space-y-8 text-sm text-muted-foreground data-[state=open]:animate-slide-down data-[state=closed]:animate-slide-up overflow-hidden">
+              <div className="mt-4 pt-6 pb-8 px-6 sm:px-8 bg-muted/30 rounded-[2rem] space-y-10">
+                <div className="space-y-3">
+                  <h2 className="font-medium text-foreground">Understanding Lakhs and Crores</h2>
+                  <p className="leading-relaxed opacity-90">
+                    The Indian numbering system uses lakhs (100,000) and crores (10,000,000). 
+                    This tool converts between the Indian and international systems, showing live USD equivalents.
+                  </p>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <li className="bg-background/50 px-4 py-3 rounded-xl text-xs border border-border/50">
+                      <strong className="text-foreground block mb-0.5">1 Lakh</strong>
+                      100,000 (one hundred thousand)
+                    </li>
+                    <li className="bg-background/50 px-4 py-3 rounded-xl text-xs border border-border/50">
+                      <strong className="text-foreground block mb-0.5">1 Crore</strong>
+                      100 Lakhs = 10,000,000 (ten million)
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h2 className="font-medium text-foreground">Live Conversions (1 USD = {initialRate.toFixed(2)} INR)</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="bg-background/50 p-4 rounded-xl text-center border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">1 Lakh</div>
+                      <div className="font-mono font-medium text-foreground">${(100000 / initialRate).toFixed(2)}</div>
+                    </div>
+                    <div className="bg-background/50 p-4 rounded-xl text-center border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">10 Lakhs</div>
+                      <div className="font-mono font-medium text-foreground">${(1000000 / initialRate).toFixed(2)}</div>
+                    </div>
+                    <div className="bg-background/50 p-4 rounded-xl text-center border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">1 Crore</div>
+                      <div className="font-mono font-medium text-foreground">${(10000000 / initialRate).toFixed(2)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pb-2">
+                  <h2 className="font-medium text-foreground">Common Questions</h2>
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <p className="text-foreground/80 font-medium text-xs">How much is 1 lakh in USD?</p>
+                      <p className="leading-relaxed text-muted-foreground opacity-90 text-xs">
+                        The exact value changes with the market. Use the converter above for the most current number.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-foreground/80 font-medium text-xs">How do I convert lakhs to dollars?</p>
+                      <p className="leading-relaxed text-muted-foreground opacity-90 text-xs">
+                        Multiply the lakh value by 100,000 to get the INR amount, then divide by the live USD/INR exchange rate.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </section>
       </main>
     </div>
