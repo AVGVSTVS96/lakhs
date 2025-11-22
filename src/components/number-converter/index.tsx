@@ -73,15 +73,22 @@ function StatusBar({
   error: string | null
   lastUpdated: Date | null
 }) {
+  const [whole, decimal] = rate.toFixed(4).split('.')
+  const major = decimal.slice(0, 2)
+  const minor = decimal.slice(2)
+
   return (
-    <div className="flex items-center justify-between px-6 py-3 rounded-full bg-muted/50 text-xs font-medium text-muted-foreground">
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 text-primary/80">
-          <ArrowLeftRight className="size-3.5" />
-          <span>1 USD = ₹{formatRateDisplayValue(rate)}</span>
+    <div className="flex items-center justify-between px-6 py-3 rounded-full bg-muted/50 border border-border/50 text-xs font-medium text-muted-foreground">
+      <div className="flex items-center gap-3 font-mono text-sm">
+        <span className="text-muted-foreground/50 font-medium text-xs">1 USD</span>
+        <span className="text-border/50 mx-[-4px]">/</span>
+        <div className="flex items-baseline">
+          <span className="text-muted-foreground/70 mr-0.5 text-xs font-sans">₹</span>
+          <span className="font-semibold text-foreground">{whole}.{major}</span>
+          <span className="text-[10px] font-medium text-muted-foreground/60 ml-0.5 -translate-y-[1px]">{minor}</span>
         </div>
-        {isLoading && <RefreshCw className="size-3 animate-spin" />}
-        {error && <span className="text-destructive">{error}</span>}
+        {isLoading && <RefreshCw className="size-3 animate-spin ml-1 opacity-50" />}
+        {error && <span className="text-destructive ml-2">{error}</span>}
       </div>
       {lastUpdated && (
         <span className="opacity-50 font-mono">
@@ -207,7 +214,14 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      <div className="flex flex-col gap-4 sm:p-8 sm:bg-muted/30 sm:rounded-[2rem]">
+      <StatusBar
+        rate={rate}
+        isLoading={isRateLoading}
+        error={rateFetchError}
+        lastUpdated={lastRateFetchedAt}
+      />
+
+      <div className="flex flex-col gap-4 sm:p-8 sm:bg-muted/50 sm:rounded-[2rem] sm:border sm:border-border/50">
         <UnifiedInput
           id="entry"
           label="Primary Currency"
@@ -270,13 +284,6 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
           />
         </div>
       </div>
-
-      <StatusBar
-        rate={rate}
-        isLoading={isRateLoading}
-        error={rateFetchError}
-        lastUpdated={lastRateFetchedAt}
-      />
     </div>
   )
 }
