@@ -11,7 +11,7 @@ export default async function Home() {
   const initialRate = await getExchangeRate()
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background transition-colors duration-300">
 
       {/* SEO Content - Visually hidden but accessible to bots and screen readers */}
       <div className="sr-only">
@@ -57,22 +57,16 @@ export default async function Home() {
         </p>
       </div>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 pb-12 pt-6 sm:gap-8 sm:pb-16" role="main">
-        <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+      <main className="mx-auto flex max-w-3xl flex-col px-6 py-8 sm:py-16" role="main">
+        <header className="flex items-center justify-between mb-12">
+          <h1 className="text-2xl font-bold tracking-tighter">
             lakhs
           </h1>
           <ThemeToggle />
         </header>
 
-        <section aria-label="Currency converter tool" className="pt-2">
-          <div className="space-y-2">
-            <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Converter</h2>
-            <p className="text-muted-foreground">Numbers, lakhs, crores, and currency.</p>
-          </div>
-          <div className="mt-6">
-            <NumberConverter initialRate={initialRate} />
-          </div>
+        <section aria-label="Currency converter tool">
+          <NumberConverter initialRate={initialRate} />
         </section>
       </main>
     </div>

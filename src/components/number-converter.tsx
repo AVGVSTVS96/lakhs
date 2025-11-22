@@ -1,12 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { ArrowLeftRight, RefreshCw } from "lucide-react"
 
-import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Field } from "@/components/number-converter/Field"
-import { EntryField } from "@/components/number-converter/EntryField"
-import { StatBlock } from "@/components/number-converter/StatBlock"
+import { UnifiedInput } from "@/components/number-converter/UnifiedInput"
 import { DEFAULT_RATE, fetchUsdInr } from "@/lib/rates"
 import {
   convertInrToUsd,
@@ -21,6 +19,7 @@ import {
   toCrores,
   toLakhs,
 } from "@/lib/conversions"
+import { cn } from "@/lib/utils"
 
 type EntryCurrency = "inr" | "usd"
 type FieldKey = "entry" | "lakhs" | "crores"
@@ -214,115 +213,103 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
   }, [fetchLiveRate])
 
   const formattedIndian = formatIndianNumber(baseValue)
-  const formattedInternational = formatInternationalNumber(baseValue)
   const usdEquivalent = convertInrToUsd(baseValue, rate)
   const formattedUsd = formatUsdDisplay(usdEquivalent)
-  const rateSummary = formatWithPrecision(rate, 4)
-  const rateFetchedLabel = React.useMemo(() => {
-    if (!lastRateFetchedAt) return null
-    return new Intl.DateTimeFormat("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(lastRateFetchedAt)
-  }, [lastRateFetchedAt])
+  const formattedInternational = formatInternationalNumber(baseValue)
+
+  // Helper for subtext
+  const SubtextPill = ({ label, value }: { label: string, value: string }) => (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/5 dark:bg-white/10 text-xs font-medium">
+      <span className="opacity-70 uppercase tracking-wider">{label}</span>
+      <span>{value}</span>
+    </span>
+  )
 
   return (
-    <div className="space-y-6" role="region" aria-label="Currency and number format converter">
-      <div className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <Label htmlFor="entry" className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              Amount
-            </Label>
-          </div>
-          <Tabs value={entryCurrency} onValueChange={handleCurrencyToggle} className="sm:self-end" aria-label="Select currency">
-            <TabsList>
-              <TabsTrigger value="inr">INR</TabsTrigger>
-              <TabsTrigger value="usd">USD</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <EntryField
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      <div className="flex flex-col gap-4 sm:p-8 sm:bg-muted/30 sm:rounded-[2rem]">
+        <UnifiedInput
           id="entry"
+          label="Primary Currency"
           prefix={entryPrefixes[entryCurrency]}
           value={fields.entry}
           onChange={handleEntryChange}
           onFocus={handleFocus("entry")}
           onBlur={handleBlur("entry")}
-          invalid={invalidField === "entry"}
+          isActive={activeField === "entry"}
+          subtext={
+            entryCurrency === "inr" ? (
+               <>
+                 <SubtextPill label="USD" value={`$${formattedUsd}`} />
+                 <span className="text-muted-foreground/30">•</span>
+                 <span className="text-xs opacity-70">Intl: {formattedInternational}</span>
+               </>
+            ) : (
+              <>
+                <SubtextPill label="INR" value={`₹${formattedIndian}`} />
+              </>
+            )
+          }
+          controls={
+            <Tabs value={entryCurrency} onValueChange={handleCurrencyToggle}>
+              <TabsList className="h-8 w-fit bg-black/5 dark:bg-white/10">
+                <TabsTrigger value="inr" className="text-xs px-3 h-7 rounded-sm">INR</TabsTrigger>
+                <TabsTrigger value="usd" className="text-xs px-3 h-7 rounded-sm">USD</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          }
         />
-      </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Field
-          id="lakhs"
-          label="Lakhs"
-          description="1 lakh = 100,000"
-          value={fields.lakhs}
-          onChange={handleUnitChange("lakhs")}
-          onFocus={handleFocus("lakhs")}
-          onBlur={handleBlur("lakhs")}
-          invalid={invalidField === "lakhs"}
-        />
-        <Field
-          id="crores"
-          label="Crores"
-          description="1 crore = 10,000,000"
-          value={fields.crores}
-          onChange={handleUnitChange("crores")}
-          onFocus={handleFocus("crores")}
-          onBlur={handleBlur("crores")}
-          invalid={invalidField === "crores"}
-        />
-      </div>
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-4">
+          <UnifiedInput
+            id="lakhs"
+            label="Lakhs"
+            suffix="L"
+            value={fields.lakhs}
+            onChange={handleUnitChange("lakhs")}
+            onFocus={handleFocus("lakhs")}
+            onBlur={handleBlur("lakhs")}
+            isActive={activeField === "lakhs"}
+            subtext={
+              <span className="text-xs text-muted-foreground/70">
+                 1 Lakh = 100,000
+              </span>
+            }
+          />
 
-      {/* Minimal: no heavy separators/cards */}
-
-      <div className="grid gap-6 text-sm sm:grid-cols-2" role="region" aria-label="Conversion results">
-        <StatBlock
-          label="USD amount"
-          value={`$${formattedUsd}`}
-        />
-        <StatBlock
-          label="INR · Indian grouping"
-          value={`₹${formattedIndian}`}
-        />
-        <StatBlock
-          label="Lakhs"
-          value={`${formatWithPrecision(toLakhs(baseValue))} L`}
-        />
-        <StatBlock
-          label="Crores"
-          value={`${formatWithPrecision(toCrores(baseValue), 4)} Cr`}
-        />
-        <StatBlock
-          label="Exchange snapshot"
-          value={`1 USD → ₹${rateSummary}`}
-        />
-        <StatBlock
-          label="INR · International grouping"
-          value={`₹${formattedInternational}`}
-        />
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" aria-live="polite" aria-atomic="true">
-        <div className="space-y-1">
-          <Label className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Exchange rate</Label>
-          {rateFetchedLabel && !isRateLoading && !rateFetchError ? (
-            <p className="text-xs text-muted-lighter">Last updated at {rateFetchedLabel}</p>
-          ) : null}
-          {isRateLoading ? (
-            <p className="text-xs text-muted-foreground">Fetching latest rate…</p>
-          ) : null}
-          {rateFetchError ? (
-            <p className="text-xs text-amber-600 dark:text-amber-400">{rateFetchError}</p>
-          ) : null}
+          <UnifiedInput
+            id="crores"
+            label="Crores"
+            suffix="Cr"
+            value={fields.crores}
+            onChange={handleUnitChange("crores")}
+            onFocus={handleFocus("crores")}
+            onBlur={handleBlur("crores")}
+            isActive={activeField === "crores"}
+            subtext={
+              <span className="text-xs text-muted-foreground/70">
+                 1 Crore = 100 Lakhs
+              </span>
+            }
+          />
         </div>
-        <div className="flex flex-col items-start gap-1 sm:items-end">
-          <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">1 USD</span>
-          <span className="text-2xl font-semibold">₹{rateDisplay}</span>
+      </div>
+
+      {/* Status Bar */}
+      <div className="flex items-center justify-between px-6 py-3 rounded-full bg-muted/50 text-xs font-medium text-muted-foreground">
+        <div className="flex items-center gap-2">
+           <div className="flex items-center gap-1.5 text-primary/80">
+             <ArrowLeftRight className="size-3.5" />
+             <span>1 USD = ₹{rateDisplay}</span>
+           </div>
+           {isRateLoading && <RefreshCw className="size-3 animate-spin" />}
+           {rateFetchError && <span className="text-destructive">{rateFetchError}</span>}
         </div>
+        {lastRateFetchedAt && (
+          <span className="opacity-50 font-mono">
+             Updated {lastRateFetchedAt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+          </span>
+        )}
       </div>
     </div>
   )

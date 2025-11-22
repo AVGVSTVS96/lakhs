@@ -130,6 +130,14 @@
   .text-muted-lighter {
     color: color-mix(in oklch, var(--muted-foreground), var(--background) 25%);
   }
+  
+  /* Label prominent/faint color mixes */
+  .text-label-active {
+     color: color-mix(in oklch, var(--primary), transparent 20%);
+  }
+  .text-label-inactive {
+     color: color-mix(in oklch, var(--muted-foreground), transparent 30%);
+  }
 
   /* Screen reader only - visually hidden but accessible to screen readers and bots */
   .sr-only {
