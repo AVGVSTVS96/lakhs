@@ -59,9 +59,16 @@ export default async function Home() {
 
       <main className="mx-auto flex max-w-3xl flex-col px-6 py-8 sm:py-16" role="main">
         <header className="flex items-center justify-between mb-12">
-          <h1 className="text-2xl font-bold tracking-tighter">
-            lakhs
+          {/* Visually hidden H1 for SEO and screen readers */}
+          <h1 className="sr-only">
+            Lakhs and Crores to USD Converter with Live Exchange Rates
           </h1>
+
+          {/* The visible, branded "lakhs" title */}
+          <div className="text-2xl font-bold tracking-tighter" aria-hidden="true">
+            lakhs
+          </div>
+
           <ThemeToggle />
         </header>
 
