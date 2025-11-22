@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
 import { ThemeProvider } from "@/components/theme-provider"
-import { jsonLd, faqSchema, howToSchema } from "@/lib/seo"
+import { jsonLd, faqSchema, howToSchema, organizationSchema } from "@/lib/seo"
 
 import "./globals.css"
 
@@ -24,6 +24,11 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://lakhs.vercel.app'),
   alternates: {
     canonical: '/',
+    languages: {
+      'en-US': '/',
+      'en-IN': '/',
+      'x-default': '/',
+    },
   },
   openGraph: {
     title: "Lakhs & Crores Converter | USD to INR Calculator",
@@ -32,11 +37,20 @@ export const metadata: Metadata = {
     siteName: 'Lakhs Converter',
     locale: 'en_US',
     type: 'website',
+    images: [
+      {
+        url: '/opengraph-image.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Lakhs and Crores to USD Converter',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: "Lakhs & Crores Converter",
     description: "Convert Indian numbers (lakhs, crores) to USD/INR with live exchange rates.",
+    images: ['/opengraph-image.svg'],
   },
   robots: {
     index: true,
@@ -50,7 +64,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'verification_token_here', // Replace with actual Google Search Console token
+    google: 'YOUR_ACTUAL_GOOGLE_VERIFICATION_TOKEN_HERE',
   },
 }
 
@@ -76,9 +90,22 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider>{children}</ThemeProvider>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased transition-colors duration-300`}>
+        <ThemeProvider>
+          <div className="flex flex-col min-h-screen">
+            <div className="flex-grow">
+              {children}
+            </div>
+            <footer className="py-8 text-center text-xs text-muted-foreground/60">
+              <p>Rates are updated every 5 minutes. Built by AVGVSTVS96.</p>
+            </footer>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )

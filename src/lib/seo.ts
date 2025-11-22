@@ -76,3 +76,11 @@ export const howToSchema = {
     { '@type': 'HowToStep', name: 'Check exchange rate', text: 'See the live exchange rate at the bottom. Rates are updated every 5 minutes for accuracy.' },
   ],
 }
+
+export const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Lakhs Converter',
+  url: 'https://lakhs.vercel.app',
+  logo: 'https://lakhs.vercel.app/icon.svg',
+}

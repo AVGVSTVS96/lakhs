@@ -13,9 +13,8 @@ export default async function Home() {
   const initialRate = await getExchangeRate()
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
-      <main className="mx-auto flex max-w-3xl flex-col px-6 py-8 sm:py-16" role="main">
-        <header className="flex items-center justify-between mb-12">
+    <main className="mx-auto flex max-w-3xl flex-col px-6 py-8 sm:py-16" role="main">
+      <header className="flex items-center justify-between mb-12">
           {/* Visually hidden H1 for SEO and screen readers */}
           <h1 className="sr-only">
             Lakhs and Crores to USD Converter with Live Exchange Rates
@@ -99,7 +98,6 @@ export default async function Home() {
             </CollapsibleContent>
           </Collapsible>
         </section>
-      </main>
-    </div>
+    </main>
   )
 }
