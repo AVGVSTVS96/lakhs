@@ -50,7 +50,7 @@ export const faqSchema = {
       name: 'How much is 1 lakh in USD?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: '1 lakh is approximately $1,125 USD at current exchange rates (1 USD = 88.79 INR). The exact value varies with live exchange rates.',
+        text: 'The exact value varies with live exchange rates. Use the converter on our page for the current, accurate conversion.',
       },
     },
     {
@@ -58,7 +58,7 @@ export const faqSchema = {
       name: 'How much is 1 crore in USD?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: '1 crore is approximately $112,500 USD at current exchange rates. This converter provides real-time calculations with live USD/INR rates.',
+        text: 'The value changes constantly with the market. This converter provides real-time calculations using live USD/INR rates.',
       },
     },
   ],
