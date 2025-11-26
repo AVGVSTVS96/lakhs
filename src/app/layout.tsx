@@ -101,8 +101,21 @@ export default function RootLayout({
             <div className="flex-grow">
               {children}
             </div>
-            <footer className="py-8 text-center text-xs text-muted-foreground/60">
-              <p>Rates are updated every 5 minutes. Built by AVGVSTVS96.</p>
+            <footer className="py-8 text-xs text-muted-lighter">
+              <div className="mx-auto w-full max-w-2xl px-4 sm:px-8 flex items-center justify-between">
+                <p>Rates are updated every 5 minutes.</p>
+                <p>
+                  Built by{" "}
+                  <a
+                    href="https://github.com/avgvstvs96/lakhs"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="!cursor-pointer font-semibold text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Bassim
+                  </a>
+                </p>
+              </div>
             </footer>
           </div>
         </ThemeProvider>

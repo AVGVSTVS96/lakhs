@@ -38,7 +38,7 @@ export default async function ConversionLandingPage({ params }: { params: Promis
   const initialRate = await getExchangeRate()
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col px-6 py-8 sm:py-16" role="main">
+    <main className="mx-auto flex max-w-2xl w-full flex-col px-4 py-8 sm:px-8 sm:py-16" role="main">
       <header className="flex items-center justify-between mb-12">
         <h1 className="sr-only">{config.title}</h1>
         <div className="text-2xl font-bold tracking-tighter" aria-hidden="true">
