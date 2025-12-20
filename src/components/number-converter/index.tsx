@@ -201,13 +201,6 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
     if (value === entryCurrency) return
     const next = value === "usd" ? "usd" : "inr"
 
-    // Keep the displayed number the same, but adjust baseValue for the new currency
-    if (entryCurrency === "inr" && next === "usd") {
-      setBaseValue((current) => current * rate)
-    } else if (entryCurrency === "usd" && next === "inr") {
-      setBaseValue((current) => current / rate)
-    }
-
     setEntryCurrency(next)
     setActiveField(null)
   }
