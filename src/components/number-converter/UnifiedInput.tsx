@@ -46,18 +46,22 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
               {prefix}
             </span>
           )}
-          <Input
-            ref={ref}
-            type="text"
-            inputMode="decimal"
-            className={cn(
-              // added tabular-nums and caret-primary
-              "h-auto border-0 bg-transparent p-0 md:p-0 text-5xl sm:text-6xl md:text-6xl font-semibold tracking-tight shadow-none transition-all placeholder:text-muted-foreground/20 focus-visible:ring-0 tabular-nums caret-primary",
-              "w-full",
-              isActive ? "text-primary" : "text-foreground"
-            )}
-            {...props}
-          />
+          <div className="relative flex-1 min-w-0 overflow-hidden">
+            <Input
+              ref={ref}
+              type="text"
+              inputMode="decimal"
+              className={cn(
+                // added tabular-nums and caret-primary
+                "h-auto border-0 bg-transparent p-0 md:p-0 text-5xl sm:text-6xl md:text-6xl font-semibold tracking-tight shadow-none transition-all placeholder:text-muted-foreground/20 focus-visible:ring-0 tabular-nums caret-primary",
+                "w-full",
+                isActive ? "text-primary" : "text-foreground",
+                // Fade effect using mask-image
+                "mask-fade-right"
+              )}
+              {...props}
+            />
+          </div>
           {suffix && (
             <span className={cn(
               "ml-3 text-2xl sm:text-3xl font-light self-end mb-1.5 transition-colors select-none",

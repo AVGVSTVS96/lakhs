@@ -140,15 +140,10 @@
   }
 
   /* Screen reader only - visually hidden but accessible to screen readers and bots */
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
+
+  /* Fade effect for overflowing input text */
+  .mask-fade-right {
+    mask-image: linear-gradient(to right, black 0%, black calc(100% - 2rem), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 2rem), transparent 100%);
   }
 }
