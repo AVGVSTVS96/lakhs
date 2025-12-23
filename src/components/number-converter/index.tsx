@@ -3,8 +3,8 @@
 import * as React from "react"
 import { ArrowLeftRight, RefreshCw } from "lucide-react"
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UnifiedInput } from "@/components/number-converter/UnifiedInput"
+import { CurrencySwitcher, type EntryCurrency } from "@/components/number-converter/CurrencySwitcher"
 import { DEFAULT_RATE } from "@/lib/rates"
 import { useExchangeRate } from "./use-exchange-rate"
 import {
@@ -21,7 +21,6 @@ import {
   toLakhs,
 } from "@/lib/conversions"
 
-type EntryCurrency = "inr" | "usd"
 type FieldKey = "entry" | "lakhs" | "crores"
 
 const INITIAL_BASE_VALUE = 1_000_000
@@ -197,11 +196,8 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
     setBaseValue(nextBase)
   }
 
-  const handleCurrencyToggle = (value: string) => {
-    if (value === entryCurrency) return
-    const next = value === "usd" ? "usd" : "inr"
-
-    setEntryCurrency(next)
+  const handleCurrencyToggle = () => {
+    setEntryCurrency((prev) => (prev === "inr" ? "usd" : "inr"))
     setActiveField(null)
   }
 
@@ -238,16 +234,7 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             )
           }
           controls={
-            <Tabs value={entryCurrency} onValueChange={handleCurrencyToggle}>
-              <TabsList className="h-8 w-fit bg-black/5 dark:bg-white/10">
-                <TabsTrigger value="inr" className="text-xs px-3 h-7 rounded-sm">
-                  INR
-                </TabsTrigger>
-                <TabsTrigger value="usd" className="text-xs px-3 h-7 rounded-sm">
-                  USD
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <CurrencySwitcher value={entryCurrency} onToggle={handleCurrencyToggle} />
           }
         />
 

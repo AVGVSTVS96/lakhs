@@ -41,7 +41,7 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
           {prefix && (
             <span className={cn(
               "mr-3 text-4xl sm:text-5xl font-light transition-colors select-none",
-              isActive ? "text-primary" : "text-muted-foreground/60"
+              isActive ? "text-label-active" : "text-muted-foreground/60"
             )}>
               {prefix}
             </span>
@@ -65,7 +65,7 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
           {suffix && (
             <span className={cn(
               "ml-3 text-2xl sm:text-3xl font-light self-end mb-1.5 transition-colors select-none",
-              isActive ? "text-primary" : "text-muted-foreground/60"
+              isActive ? "text-label-active" : "text-muted-foreground/60"
             )}>
               {suffix}
             </span>

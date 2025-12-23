@@ -141,11 +141,6 @@
 
   /* Screen reader only - visually hidden but accessible to screen readers and bots */
 
-  /* Brighter version of background for active input states */
-  .bg-background-brighter {
-    background-color: color-mix(in oklch, var(--background), white 25%);
-  }
-
   /* Fade effect for overflowing input text */
   .mask-fade-right {
     mask-image: linear-gradient(to right, black 0%, black calc(100% - 2rem), transparent 100%);
