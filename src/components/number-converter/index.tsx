@@ -23,6 +23,24 @@ import {
 
 type FieldKey = "entry" | "lakhs" | "crores"
 
+// Fixed-decimal input: digits shift in from right (ATM-style)
+const handleFixedDecimal = (
+  e: React.KeyboardEvent<HTMLInputElement>,
+  value: number,
+  onChange: (v: number) => void,
+  decimals = 2
+) => {
+  const mult = 10 ** decimals
+  if (/^[0-9]$/.test(e.key)) {
+    e.preventDefault()
+    const int = Math.round(value * mult)
+    onChange((int * 10 + parseInt(e.key)) / mult)
+  } else if (e.key === "Backspace") {
+    e.preventDefault()
+    onChange(Math.floor(Math.round(value * mult) / 10) / mult)
+  }
+}
+
 const INITIAL_BASE_VALUE = 1_000_000
 
 const entryPrefixes: Record<EntryCurrency, string> = {
@@ -219,6 +237,14 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
           onChange={handleEntryChange}
           onFocus={handleFocus("entry")}
           onBlur={handleBlur}
+          onKeyDown={(e) => {
+            const displayValue = entryCurrency === "inr" ? baseValue : convertInrToUsd(baseValue, rate)
+            handleFixedDecimal(e, displayValue, (v) => {
+              const newBase = entryCurrency === "inr" ? v : convertUsdToInr(v, rate)
+              setBaseValue(newBase)
+              setActiveInput(formatInternationalInputString(v.toFixed(2)))
+            })
+          }}
           isActive={activeField === "entry"}
           subtext={
             entryCurrency === "inr" ? (
@@ -247,6 +273,10 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             onChange={handleUnitChange("lakhs")}
             onFocus={handleFocus("lakhs")}
             onBlur={handleBlur}
+            onKeyDown={(e) => handleFixedDecimal(e, toLakhs(baseValue), (v) => {
+              setBaseValue(fromLakhs(v))
+              setActiveInput(v.toFixed(2))
+            })}
             isActive={activeField === "lakhs"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Lakh = 100,000</span>}
           />
@@ -259,6 +289,10 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             onChange={handleUnitChange("crores")}
             onFocus={handleFocus("crores")}
             onBlur={handleBlur}
+            onKeyDown={(e) => handleFixedDecimal(e, toCrores(baseValue), (v) => {
+              setBaseValue(fromCrores(v))
+              setActiveInput(v.toFixed(4))
+            }, 4)}
             isActive={activeField === "crores"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Crore = 100 Lakhs</span>}
           />
