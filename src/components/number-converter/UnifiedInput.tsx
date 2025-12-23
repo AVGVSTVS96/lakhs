@@ -18,7 +18,7 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
         className={cn(
           "group relative flex flex-col gap-1 rounded-2xl p-6 transition-all duration-300",
           isActive 
-            ? "bg-white dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 shadow-lg shadow-black/5 scale-[1.01]" 
+            ? "bg-background dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 shadow-lg shadow-black/5 scale-[1.01]" 
             : "bg-transparent hover:bg-black/5 dark:hover:bg-white/5",
           className
         )}
