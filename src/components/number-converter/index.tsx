@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ArrowLeftRight, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 
 import { UnifiedInput } from "@/components/number-converter/UnifiedInput"
 import { CurrencySwitcher, type EntryCurrency } from "@/components/number-converter/CurrencySwitcher"
@@ -15,30 +15,17 @@ import {
   formatWithPrecision,
   fromCrores,
   fromLakhs,
-  parseNumber,
-  sanitizeNumericInput,
   toCrores,
   toLakhs,
 } from "@/lib/conversions"
 
 type FieldKey = "entry" | "lakhs" | "crores"
 
-// Fixed-decimal input: digits shift in from right (ATM-style)
-const handleFixedDecimal = (
-  e: React.KeyboardEvent<HTMLInputElement>,
-  value: number,
-  onChange: (v: number) => void,
-  decimals = 2
-) => {
-  const mult = 10 ** decimals
-  if (/^[0-9]$/.test(e.key)) {
-    e.preventDefault()
-    const int = Math.round(value * mult)
-    onChange((int * 10 + parseInt(e.key)) / mult)
-  } else if (e.key === "Backspace") {
-    e.preventDefault()
-    onChange(Math.floor(Math.round(value * mult) / 10) / mult)
-  }
+// Fixed-decimal input: extract digits, treat as smallest unit
+const parseFixedDecimal = (input: string, decimals = 2): number => {
+  const digits = input.replace(/\D/g, "") // Remove all non-digits
+  const int = parseInt(digits || "0", 10)
+  return int / 10 ** decimals
 }
 
 const INITIAL_BASE_VALUE = 1_000_000
@@ -59,8 +46,6 @@ const formatUsdDisplay = (value: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
-
-const formatRateDisplayValue = (value: number) => value.toFixed(4)
 
 const formatEntryFromBase = (baseValue: number, currency: EntryCurrency, rate: number) => {
   if (currency === "inr") {
@@ -116,23 +101,6 @@ function StatusBar({
   )
 }
 
-const isTransientNumericInput = (value: string) =>
-  value === "" || value === "-" || value === "." || value === "-." || value.endsWith(".")
-
-const formatInternationalInputString = (value: string) => {
-  if (!value) return ""
-  if (value === "-") return "-"
-
-  const negative = value.startsWith("-")
-  const unsigned = negative ? value.slice(1) : value
-  const [integerPartRaw, ...decimalParts] = unsigned.split(".")
-  const integerPart = integerPartRaw.replace(/^0+(?=\d)/, "") || "0"
-  const decimalPart = decimalParts.length > 0 ? decimalParts.join("") : undefined
-  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-  const decimal = decimalPart !== undefined ? `.${decimalPart}` : ""
-  return `${negative ? "-" : ""}${formattedInteger}${decimal}`
-}
-
 type NumberConverterProps = {
   initialRate?: number
 }
@@ -180,40 +148,6 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
     setActiveInput("")
   }
 
-  const handleEntryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = event.target.value
-    const sanitized = sanitizeNumericInput(raw)
-    
-    // Update the "transient" input state so the user sees exactly what they type
-    setActiveInput(formatInternationalInputString(sanitized))
-
-    const parsed = parseNumber(raw)
-    if (parsed == null) {
-      // If invalid, we just keep the transient input but don't update baseValue
-      // (unless it's empty/cleared, maybe set baseValue to 0? Existing logic implied preserving old val or handling it)
-       if (!isTransientNumericInput(sanitized)) {
-           // Invalid non-transient input (e.g. multiple dots? handled by sanitize mostly)
-       }
-       return
-    }
-
-    const nextBase = entryCurrency === "inr" ? parsed : convertUsdToInr(parsed, rate)
-    setBaseValue(nextBase)
-  }
-
-  const handleUnitChange = (field: Exclude<FieldKey, "entry">) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = event.target.value
-    const sanitized = sanitizeNumericInput(raw)
-    
-    setActiveInput(sanitized)
-
-    const parsed = parseNumber(sanitized)
-    if (parsed == null) return
-
-    const nextBase = field === "lakhs" ? fromLakhs(parsed) : fromCrores(parsed)
-    setBaseValue(nextBase)
-  }
-
   const handleCurrencyToggle = () => {
     setEntryCurrency((prev) => (prev === "inr" ? "usd" : "inr"))
     setActiveField(null)
@@ -234,17 +168,14 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
           label="Primary Currency"
           prefix={entryPrefixes[entryCurrency]}
           value={getFieldValue("entry")}
-          onChange={handleEntryChange}
+          onChange={(e) => {
+            const parsed = parseFixedDecimal(e.target.value)
+            const newBase = entryCurrency === "inr" ? parsed : convertUsdToInr(parsed, rate)
+            setBaseValue(newBase)
+            setActiveInput(parsed.toFixed(2))
+          }}
           onFocus={handleFocus("entry")}
           onBlur={handleBlur}
-          onKeyDown={(e) => {
-            const displayValue = entryCurrency === "inr" ? baseValue : convertInrToUsd(baseValue, rate)
-            handleFixedDecimal(e, displayValue, (v) => {
-              const newBase = entryCurrency === "inr" ? v : convertUsdToInr(v, rate)
-              setBaseValue(newBase)
-              setActiveInput(formatInternationalInputString(v.toFixed(2)))
-            })
-          }}
           isActive={activeField === "entry"}
           subtext={
             entryCurrency === "inr" ? (
@@ -270,13 +201,13 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             label="Lakhs"
             suffix="L"
             value={getFieldValue("lakhs")}
-            onChange={handleUnitChange("lakhs")}
+            onChange={(e) => {
+              const parsed = parseFixedDecimal(e.target.value)
+              setBaseValue(fromLakhs(parsed))
+              setActiveInput(parsed.toFixed(2))
+            }}
             onFocus={handleFocus("lakhs")}
             onBlur={handleBlur}
-            onKeyDown={(e) => handleFixedDecimal(e, toLakhs(baseValue), (v) => {
-              setBaseValue(fromLakhs(v))
-              setActiveInput(v.toFixed(2))
-            })}
             isActive={activeField === "lakhs"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Lakh = 100,000</span>}
           />
@@ -286,13 +217,13 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             label="Crores"
             suffix="Cr"
             value={getFieldValue("crores")}
-            onChange={handleUnitChange("crores")}
+            onChange={(e) => {
+              const parsed = parseFixedDecimal(e.target.value, 4)
+              setBaseValue(fromCrores(parsed))
+              setActiveInput(parsed.toFixed(4))
+            }}
             onFocus={handleFocus("crores")}
             onBlur={handleBlur}
-            onKeyDown={(e) => handleFixedDecimal(e, toCrores(baseValue), (v) => {
-              setBaseValue(fromCrores(v))
-              setActiveInput(v.toFixed(4))
-            }, 4)}
             isActive={activeField === "crores"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Crore = 100 Lakhs</span>}
           />
