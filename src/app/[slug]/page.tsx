@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { NumberConverter } from "@/components/number-converter"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { DEFAULT_RATE, fetchUsdInr } from "@/lib/rates"
+import { getExchangeRate } from "@/lib/rates"
 import { conversionPages } from "@/lib/routes"
 import Link from "next/link"
 import type { Metadata } from "next"
@@ -20,11 +20,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description: config.description,
     alternates: { canonical: `/${slug}` },
   }
-}
-
-async function getExchangeRate() {
-  const rate = await fetchUsdInr({ next: { revalidate: 300 } })
-  return rate ?? DEFAULT_RATE
 }
 
 export default async function ConversionLandingPage({ params }: { params: Promise<{ slug: string }> }) {

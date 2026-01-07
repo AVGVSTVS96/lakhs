@@ -1,13 +1,8 @@
 import { NumberConverter } from "@/components/number-converter"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { DEFAULT_RATE, fetchUsdInr } from "@/lib/rates"
+import { getExchangeRate } from "@/lib/rates"
 import { ChevronDown } from "lucide-react"
-
-async function getExchangeRate() {
-  const rate = await fetchUsdInr({ next: { revalidate: 300 } })
-  return rate ?? DEFAULT_RATE
-}
 
 export default async function Home() {
   const initialRate = await getExchangeRate()

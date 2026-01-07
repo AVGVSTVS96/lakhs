@@ -12,23 +12,18 @@ import {
   convertUsdToInr,
   formatIndianNumber,
   formatInternationalNumber,
+  formatNumberDisplay,
+  formatOrEmpty,
+  formatUsdDisplay,
   formatWithPrecision,
   fromCrores,
   fromLakhs,
+  parseNumber,
   toCrores,
   toLakhs,
 } from "@/lib/conversions"
 
 type FieldKey = "entry" | "lakhs" | "crores"
-
-// Simple numeric parsing - parse as a regular number
-const parseNumericInput = (input: string): number | null => {
-  // Remove commas (formatting) but keep decimals
-  const cleaned = input.replace(/,/g, "")
-  if (cleaned === "" || cleaned === ".") return null
-  const num = parseFloat(cleaned)
-  return isNaN(num) ? null : num
-}
 
 const INITIAL_BASE_VALUE = 1_000_000
 
@@ -37,19 +32,8 @@ const entryPrefixes: Record<EntryCurrency, string> = {
   usd: "$",
 }
 
-const formatNumberDisplay = (value: number) =>
-  value.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 6,
-  })
-
-const formatUsdDisplay = (value: number) =>
-  value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-
-const formatEntryFromBase = (baseValue: number, currency: EntryCurrency, rate: number) => {
+const formatEntryFromBase = (baseValue: number | null, currency: EntryCurrency, rate: number) => {
+  if (baseValue === null) return ""
   if (currency === "inr") {
     return formatNumberDisplay(baseValue)
   }
@@ -111,18 +95,18 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
   const [entryCurrency, setEntryCurrency] = React.useState<EntryCurrency>("inr")
   const { rate, isRateLoading, rateFetchError, lastRateFetchedAt } = useExchangeRate(initialRate)
 
-  const [baseValue, setBaseValue] = React.useState(INITIAL_BASE_VALUE)
+  const [baseValue, setBaseValue] = React.useState<number | null>(INITIAL_BASE_VALUE)
   const [activeField, setActiveField] = React.useState<FieldKey | null>(null)
 
-  // Derived display values - always formatted
-  const formattedIndian = formatIndianNumber(baseValue)
-  const usdEquivalent = convertInrToUsd(baseValue, rate)
-  const formattedUsd = formatUsdDisplay(usdEquivalent)
-  const formattedInternational = formatInternationalNumber(baseValue)
+  // Derived display values - always formatted (show empty when null)
+  const formattedIndian = formatOrEmpty(baseValue, formatIndianNumber)
+  const usdEquivalent = baseValue !== null ? convertInrToUsd(baseValue, rate) : null
+  const formattedUsd = formatOrEmpty(usdEquivalent, formatUsdDisplay)
+  const formattedInternational = formatOrEmpty(baseValue, formatInternationalNumber)
 
   const entryValue = formatEntryFromBase(baseValue, entryCurrency, rate)
-  const lakhsValue = formatWithPrecision(toLakhs(baseValue))
-  const croresValue = formatWithPrecision(toCrores(baseValue), 4)
+  const lakhsValue = formatOrEmpty(baseValue, (v) => formatWithPrecision(toLakhs(v)))
+  const croresValue = formatOrEmpty(baseValue, (v) => formatWithPrecision(toCrores(v), 4))
 
   const handleCurrencyToggle = () => {
     setEntryCurrency((prev) => (prev === "inr" ? "usd" : "inr"))
@@ -145,11 +129,11 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
           prefix={entryPrefixes[entryCurrency]}
           value={entryValue}
           onChange={(e) => {
-            const parsed = parseNumericInput(e.target.value)
+            const parsed = parseNumber(e.target.value)
             if (parsed !== null) {
               setBaseValue(entryCurrency === "inr" ? parsed : convertUsdToInr(parsed, rate))
             } else {
-              setBaseValue(0)
+              setBaseValue(null)
             }
           }}
           onFocus={() => setActiveField("entry")}
@@ -180,8 +164,8 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             suffix="L"
             value={lakhsValue}
             onChange={(e) => {
-              const parsed = parseNumericInput(e.target.value)
-              setBaseValue(parsed !== null ? fromLakhs(parsed) : 0)
+              const parsed = parseNumber(e.target.value)
+              setBaseValue(parsed !== null ? fromLakhs(parsed) : null)
             }}
             onFocus={() => setActiveField("lakhs")}
             onBlur={() => setActiveField(null)}
@@ -195,8 +179,8 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             suffix="Cr"
             value={croresValue}
             onChange={(e) => {
-              const parsed = parseNumericInput(e.target.value)
-              setBaseValue(parsed !== null ? fromCrores(parsed) : 0)
+              const parsed = parseNumber(e.target.value)
+              setBaseValue(parsed !== null ? fromCrores(parsed) : null)
             }}
             onFocus={() => setActiveField("crores")}
             onBlur={() => setActiveField(null)}

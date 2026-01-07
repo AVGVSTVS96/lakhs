@@ -65,3 +65,27 @@ export function convertInrToUsd(inr: number, rate: number) {
   if (rate === 0) return 0;
   return inr / rate;
 }
+
+// Utility to handle null values in formatting
+export function formatOrEmpty(
+  value: number | null,
+  formatter: (n: number) => string
+): string {
+  return value === null ? "" : formatter(value);
+}
+
+// Format for general number display (up to 6 decimal places)
+export function formatNumberDisplay(value: number): string {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  });
+}
+
+// Format for USD currency display (exactly 2 decimal places)
+export function formatUsdDisplay(value: number): string {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}

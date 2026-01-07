@@ -5,6 +5,9 @@ import {
   convertUsdToInr,
   formatIndianNumber,
   formatInternationalNumber,
+  formatNumberDisplay,
+  formatOrEmpty,
+  formatUsdDisplay,
   formatWithPrecision,
   fromCrores,
   fromLakhs,
@@ -55,5 +58,25 @@ describe("currency conversions", () => {
     expect(inr).toBeCloseTo(825)
     const usd = convertInrToUsd(inr, 82.5)
     expect(usd).toBeCloseTo(10)
+  })
+})
+
+describe("formatting utilities", () => {
+  it("formatOrEmpty returns empty string for null", () => {
+    expect(formatOrEmpty(null, String)).toBe("")
+  })
+
+  it("formatOrEmpty applies formatter for non-null", () => {
+    expect(formatOrEmpty(42, (n) => `$${n}`)).toBe("$42")
+  })
+
+  it("formatNumberDisplay formats with up to 6 decimals", () => {
+    expect(formatNumberDisplay(1234567)).toBe("1,234,567")
+    expect(formatNumberDisplay(1.123456)).toBe("1.123456")
+  })
+
+  it("formatUsdDisplay formats with exactly 2 decimals", () => {
+    expect(formatUsdDisplay(1234.5)).toBe("1,234.50")
+    expect(formatUsdDisplay(100)).toBe("100.00")
   })
 })

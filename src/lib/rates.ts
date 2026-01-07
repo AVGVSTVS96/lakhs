@@ -20,3 +20,9 @@ export async function fetchUsdInr(init?: RequestInit): Promise<number | null> {
   } catch {}
   return null
 }
+
+// Server-side helper for fetching exchange rate with ISR caching
+export async function getExchangeRate(): Promise<number> {
+  const rate = await fetchUsdInr({ next: { revalidate: 300 } })
+  return rate ?? DEFAULT_RATE
+}
