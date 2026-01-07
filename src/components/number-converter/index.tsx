@@ -21,11 +21,13 @@ import {
 
 type FieldKey = "entry" | "lakhs" | "crores"
 
-// Fixed-decimal input: extract digits, treat as smallest unit
-const parseFixedDecimal = (input: string, decimals = 2): number => {
-  const digits = input.replace(/\D/g, "") // Remove all non-digits
-  const int = parseInt(digits || "0", 10)
-  return int / 10 ** decimals
+// Simple numeric parsing - parse as a regular number
+const parseNumericInput = (input: string): number | null => {
+  // Remove commas (formatting) but keep decimals
+  const cleaned = input.replace(/,/g, "")
+  if (cleaned === "" || cleaned === ".") return null
+  const num = parseFloat(cleaned)
+  return isNaN(num) ? null : num
 }
 
 const INITIAL_BASE_VALUE = 1_000_000
@@ -111,42 +113,16 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
 
   const [baseValue, setBaseValue] = React.useState(INITIAL_BASE_VALUE)
   const [activeField, setActiveField] = React.useState<FieldKey | null>(null)
-  const [activeInput, setActiveInput] = React.useState<string>("")
 
-  // Derived values
+  // Derived display values - always formatted
   const formattedIndian = formatIndianNumber(baseValue)
   const usdEquivalent = convertInrToUsd(baseValue, rate)
   const formattedUsd = formatUsdDisplay(usdEquivalent)
   const formattedInternational = formatInternationalNumber(baseValue)
 
-  const getFieldValue = (field: FieldKey) => {
-    if (activeField === field) return activeInput
-
-    switch (field) {
-      case "entry":
-        return formatEntryFromBase(baseValue, entryCurrency, rate)
-      case "lakhs":
-        return formatWithPrecision(toLakhs(baseValue))
-      case "crores":
-        return formatWithPrecision(toCrores(baseValue), 4)
-    }
-  }
-
-  const handleFocus = (field: FieldKey) => () => {
-    setActiveField(field)
-    // Initialize activeInput with the current value to avoid jumps,
-    // but strip formatting for editing if needed (UnifiedInput handles display formatting)
-    const currentVal = getFieldValue(field)
-    // We want to strip commas for editing logic if we were storing raw numbers,
-    // but here we are storing the formatted string as input for "entry" mostly.
-    // Simple approach: just set it to what is displayed.
-    setActiveInput(currentVal)
-  }
-
-  const handleBlur = () => {
-    setActiveField(null)
-    setActiveInput("")
-  }
+  const entryValue = formatEntryFromBase(baseValue, entryCurrency, rate)
+  const lakhsValue = formatWithPrecision(toLakhs(baseValue))
+  const croresValue = formatWithPrecision(toCrores(baseValue), 4)
 
   const handleCurrencyToggle = () => {
     setEntryCurrency((prev) => (prev === "inr" ? "usd" : "inr"))
@@ -167,15 +143,17 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
           id="entry"
           label="Primary Currency"
           prefix={entryPrefixes[entryCurrency]}
-          value={getFieldValue("entry")}
+          value={entryValue}
           onChange={(e) => {
-            const parsed = parseFixedDecimal(e.target.value)
-            const newBase = entryCurrency === "inr" ? parsed : convertUsdToInr(parsed, rate)
-            setBaseValue(newBase)
-            setActiveInput(parsed.toFixed(2))
+            const parsed = parseNumericInput(e.target.value)
+            if (parsed !== null) {
+              setBaseValue(entryCurrency === "inr" ? parsed : convertUsdToInr(parsed, rate))
+            } else {
+              setBaseValue(0)
+            }
           }}
-          onFocus={handleFocus("entry")}
-          onBlur={handleBlur}
+          onFocus={() => setActiveField("entry")}
+          onBlur={() => setActiveField(null)}
           isActive={activeField === "entry"}
           subtext={
             entryCurrency === "inr" ? (
@@ -200,14 +178,13 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             id="lakhs"
             label="Lakhs"
             suffix="L"
-            value={getFieldValue("lakhs")}
+            value={lakhsValue}
             onChange={(e) => {
-              const parsed = parseFixedDecimal(e.target.value)
-              setBaseValue(fromLakhs(parsed))
-              setActiveInput(parsed.toFixed(2))
+              const parsed = parseNumericInput(e.target.value)
+              setBaseValue(parsed !== null ? fromLakhs(parsed) : 0)
             }}
-            onFocus={handleFocus("lakhs")}
-            onBlur={handleBlur}
+            onFocus={() => setActiveField("lakhs")}
+            onBlur={() => setActiveField(null)}
             isActive={activeField === "lakhs"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Lakh = 100,000</span>}
           />
@@ -216,14 +193,13 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             id="crores"
             label="Crores"
             suffix="Cr"
-            value={getFieldValue("crores")}
+            value={croresValue}
             onChange={(e) => {
-              const parsed = parseFixedDecimal(e.target.value, 4)
-              setBaseValue(fromCrores(parsed))
-              setActiveInput(parsed.toFixed(4))
+              const parsed = parseNumericInput(e.target.value)
+              setBaseValue(parsed !== null ? fromCrores(parsed) : 0)
             }}
-            onFocus={handleFocus("crores")}
-            onBlur={handleBlur}
+            onFocus={() => setActiveField("crores")}
+            onBlur={() => setActiveField(null)}
             isActive={activeField === "crores"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Crore = 100 Lakhs</span>}
           />
