@@ -19,6 +19,7 @@ import {
   fromCrores,
   fromLakhs,
   parseNumber,
+  sanitizeNumericInput,
   toCrores,
   toLakhs,
 } from "@/lib/conversions"
@@ -30,6 +31,47 @@ const INITIAL_BASE_VALUE = 1_000_000
 const entryPrefixes: Record<EntryCurrency, string> = {
   inr: "₹",
   usd: "$",
+}
+
+// Hook to manage raw input state during editing
+function useRawInput(
+  formattedValue: string,
+  onValidChange: (value: number | null) => void,
+  isActive: boolean
+) {
+  const [rawInput, setRawInput] = React.useState<string | null>(null)
+
+  // When field becomes inactive, clear raw input to show formatted value
+  React.useEffect(() => {
+    if (!isActive) {
+      setRawInput(null)
+    }
+  }, [isActive])
+
+  const displayValue = rawInput !== null ? rawInput : formattedValue
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Store raw input (sanitized to only valid characters)
+    const sanitized = sanitizeNumericInput(value)
+    setRawInput(sanitized)
+
+    // Try to parse and update base value if valid
+    const parsed = parseNumber(value)
+    if (parsed !== null) {
+      onValidChange(parsed)
+    } else if (value.trim() === "") {
+      onValidChange(null)
+    }
+    // For intermediate states like "123." we keep raw input but don't update baseValue
+  }
+
+  const handleBlur = () => {
+    // On blur, clear raw input to show formatted value
+    setRawInput(null)
+  }
+
+  return { displayValue, handleChange, handleBlur }
 }
 
 const formatEntryFromBase = (baseValue: number | null, currency: EntryCurrency, rate: number) => {
@@ -104,9 +146,34 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
   const formattedUsd = formatOrEmpty(usdEquivalent, formatUsdDisplay)
   const formattedInternational = formatOrEmpty(baseValue, formatInternationalNumber)
 
-  const entryValue = formatEntryFromBase(baseValue, entryCurrency, rate)
-  const lakhsValue = formatOrEmpty(baseValue, (v) => formatWithPrecision(toLakhs(v)))
-  const croresValue = formatOrEmpty(baseValue, (v) => formatWithPrecision(toCrores(v), 4))
+  const entryFormattedValue = formatEntryFromBase(baseValue, entryCurrency, rate)
+  const lakhsFormattedValue = formatOrEmpty(baseValue, (v) => formatWithPrecision(toLakhs(v)))
+  const croresFormattedValue = formatOrEmpty(baseValue, (v) => formatWithPrecision(toCrores(v), 4))
+
+  // Use raw input hooks to preserve user input during editing
+  const entryInput = useRawInput(
+    entryFormattedValue,
+    (parsed) => {
+      if (parsed !== null) {
+        setBaseValue(entryCurrency === "inr" ? parsed : convertUsdToInr(parsed, rate))
+      } else {
+        setBaseValue(null)
+      }
+    },
+    activeField === "entry"
+  )
+
+  const lakhsInput = useRawInput(
+    lakhsFormattedValue,
+    (parsed) => setBaseValue(parsed !== null ? fromLakhs(parsed) : null),
+    activeField === "lakhs"
+  )
+
+  const croresInput = useRawInput(
+    croresFormattedValue,
+    (parsed) => setBaseValue(parsed !== null ? fromCrores(parsed) : null),
+    activeField === "crores"
+  )
 
   const handleCurrencyToggle = () => {
     setEntryCurrency((prev) => (prev === "inr" ? "usd" : "inr"))
@@ -127,17 +194,13 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
           id="entry"
           label="Primary Currency"
           prefix={entryPrefixes[entryCurrency]}
-          value={entryValue}
-          onChange={(e) => {
-            const parsed = parseNumber(e.target.value)
-            if (parsed !== null) {
-              setBaseValue(entryCurrency === "inr" ? parsed : convertUsdToInr(parsed, rate))
-            } else {
-              setBaseValue(null)
-            }
-          }}
+          value={entryInput.displayValue}
+          onChange={entryInput.handleChange}
           onFocus={() => setActiveField("entry")}
-          onBlur={() => setActiveField(null)}
+          onBlur={() => {
+            entryInput.handleBlur()
+            setActiveField(null)
+          }}
           isActive={activeField === "entry"}
           subtext={
             entryCurrency === "inr" ? (
@@ -162,13 +225,13 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             id="lakhs"
             label="Lakhs"
             suffix="L"
-            value={lakhsValue}
-            onChange={(e) => {
-              const parsed = parseNumber(e.target.value)
-              setBaseValue(parsed !== null ? fromLakhs(parsed) : null)
-            }}
+            value={lakhsInput.displayValue}
+            onChange={lakhsInput.handleChange}
             onFocus={() => setActiveField("lakhs")}
-            onBlur={() => setActiveField(null)}
+            onBlur={() => {
+              lakhsInput.handleBlur()
+              setActiveField(null)
+            }}
             isActive={activeField === "lakhs"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Lakh = 100,000</span>}
           />
@@ -177,13 +240,13 @@ export function NumberConverter({ initialRate = DEFAULT_RATE }: NumberConverterP
             id="crores"
             label="Crores"
             suffix="Cr"
-            value={croresValue}
-            onChange={(e) => {
-              const parsed = parseNumber(e.target.value)
-              setBaseValue(parsed !== null ? fromCrores(parsed) : null)
-            }}
+            value={croresInput.displayValue}
+            onChange={croresInput.handleChange}
             onFocus={() => setActiveField("crores")}
-            onBlur={() => setActiveField(null)}
+            onBlur={() => {
+              croresInput.handleBlur()
+              setActiveField(null)
+            }}
             isActive={activeField === "crores"}
             subtext={<span className="text-xs text-muted-foreground/70">1 Crore = 100 Lakhs</span>}
           />
