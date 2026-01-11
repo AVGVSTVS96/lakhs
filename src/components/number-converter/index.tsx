@@ -33,6 +33,31 @@ const entryPrefixes: Record<EntryCurrency, string> = {
   usd: "$",
 }
 
+// Format a raw numeric string with commas while preserving user's input intent
+function formatRawWithCommas(raw: string): string {
+  if (!raw) return ""
+
+  // Handle negative sign
+  const isNegative = raw.startsWith("-")
+  const withoutSign = isNegative ? raw.slice(1) : raw
+
+  // Split into integer and decimal parts
+  const [intPart, ...decimalParts] = withoutSign.split(".")
+  const decimalPart = decimalParts.join("") // Handle multiple dots by joining
+  const hasDecimal = withoutSign.includes(".")
+
+  // Format integer part with commas
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+
+  // Reconstruct: sign + formatted integer + decimal (if present)
+  let result = isNegative ? "-" + formattedInt : formattedInt
+  if (hasDecimal) {
+    result += "." + decimalPart
+  }
+
+  return result
+}
+
 // Hook to manage raw input state during editing
 function useRawInput(
   formattedValue: string,
@@ -48,11 +73,12 @@ function useRawInput(
     }
   }, [isActive])
 
-  const displayValue = rawInput !== null ? rawInput : formattedValue
+  // Format raw input with commas for display
+  const displayValue = rawInput !== null ? formatRawWithCommas(rawInput) : formattedValue
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    // Store raw input (sanitized to only valid characters)
+    // Store raw input (sanitized to only valid characters, no commas)
     const sanitized = sanitizeNumericInput(value)
     setRawInput(sanitized)
 
